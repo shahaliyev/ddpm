@@ -1,11 +1,15 @@
+import os
 import torch
 import torch.nn as nn
 import config as cfg
 from model import UNet
 from data import train_loader
-from diffusion import make_betas, forward_sample
+from diffusion import make_betas, forward_sample, reverse_sample
+from torchvision.utils import save_image
 
 def main():
+    os.makedirs(cfg.RUNS_DIR, exist_ok=True)
+
     device = cfg.DEVICE
     betas = make_betas(device)
 
@@ -38,6 +42,10 @@ def main():
 
         print(f"Epoch {e + 1}: Loss {total_loss / n:.6f}")
         torch.save(model.state_dict(), cfg.SAVE_PATH)
+
+        sample = reverse_sample(model, betas, device)
+        sample = ((sample + 1) / 2).clamp(0, 1)
+        save_image(sample, os.path.join(cfg.RUNS_DIR, f"epoch_{e + 1:04d}.png"))
 
 if __name__ == "__main__":
     main()
